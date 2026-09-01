@@ -361,9 +361,7 @@
         var STORAGE_KEY  = "packliste-mauritius";
         var SYNC_KEY     = "packliste-pin";
         var SESSION_KEY  = "packliste-synced";
-        /* Unique token for this list instance — identifies this user's data namespace on jsonstore.io */
-        var UNIQUE_TOKEN = "b47a3c9d-52e1-4f8a-a9d2-1c6e0f7b8e45";
-        var STORE_BASE   = "https://jsonstore.io/" + UNIQUE_TOKEN + "/";
+        var STORE_BASE = "https://kvdb.io/AHi9wGTRsw4UWYLZAWCvFH/";
 
         var currentPIN  = null;
         var syncTimer   = null;
@@ -396,19 +394,18 @@
         // --- Online sync ---
         function loadFromCloud(pin, callback) {
             fetch(STORE_BASE + pin, { cache: "no-store" })
-                .then(function (r) { return r.ok ? r.json() : Promise.reject("http-" + r.status); })
-                .then(function (resp) {
-                    /* jsonstore.io wraps: { "result": <value> } */
-                    var data = (resp && resp.result !== undefined) ? resp.result : resp;
-                    callback(null, data);
+                .then(function (r) {
+                    if (r.status === 404) { callback(null, null); return; }
+                    return r.ok ? r.json() : Promise.reject("http-" + r.status);
                 })
+                .then(function (data) { if (data !== undefined) callback(null, data); })
                 .catch(function (e) { callback(e, null); });
         }
 
         function saveToCloud() {
             if (!currentPIN) return;
             fetch(STORE_BASE + currentPIN, {
-                method: "POST",
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(getStore())
             })
