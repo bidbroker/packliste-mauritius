@@ -415,6 +415,10 @@
 
         function scheduleSync() {
             if (!currentPIN) return;
+            /* Bump timestamp so this device's state is marked as "newer" */
+            var stored = getStore();
+            stored._ts = Date.now();
+            setStore(stored);
             clearTimeout(syncTimer);
             setSyncStatus("saving");
             syncTimer = setTimeout(saveToCloud, 900);
@@ -440,22 +444,17 @@
             currentPIN = pin;
             localStorage.setItem(SYNC_KEY, pin);
             hidePinModal();
-
-            /* Mark this PIN as synced this session so a reload doesn't re-trigger */
             sessionStorage.setItem(SESSION_KEY, pin);
-
             setSyncStatus("loading", pin);
-            loadFromCloud(pin, function (err, data) {
-                if (!err && data && typeof data === "object" && Object.keys(data).length > 0) {
-                    setStore(data);
+            loadFromCloud(pin, function (err, cloudData) {
+                var localTs = (getStore()._ts) || 0;
+                var cloudTs = (cloudData && cloudData._ts) || 0;
+                if (!err && cloudData && cloudTs > localTs) {
+                    setStore(cloudData);
                     setSyncStatus("ok", pin);
                     location.reload();
-                } else if (err) {
-                    setSyncStatus("error", pin);
-                    scheduleSync(); /* still try to push local state */
                 } else {
-                    /* No cloud data yet — upload local state */
-                    setSyncStatus("ok", pin);
+                    setSyncStatus(err ? "error" : "ok", pin);
                     scheduleSync();
                 }
             });
@@ -699,32 +698,34 @@
         update();
 
         // --- PIN init ---
-        var savedPIN    = localStorage.getItem(SYNC_KEY);
-        var sessionPIN  = sessionStorage.getItem(SESSION_KEY);
+        var savedPIN   = localStorage.getItem(SYNC_KEY);
+        var sessionPIN = sessionStorage.getItem(SESSION_KEY);
 
         if (savedPIN && /^\d{4}$/.test(savedPIN)) {
             currentPIN = savedPIN;
+            hidePinModal();
             if (sessionPIN === savedPIN) {
-                /* Already synced this session (e.g. after reload) — just show status */
+                /* Already synced this session (after reload) — show status */
                 setSyncStatus("ok", savedPIN);
             } else {
-                /* First load this session — pull latest from cloud */
+                /* First load this session — compare timestamps with cloud */
                 sessionStorage.setItem(SESSION_KEY, savedPIN);
                 setSyncStatus("loading", savedPIN);
-                loadFromCloud(savedPIN, function (err, data) {
-                    if (!err && data && typeof data === "object" && Object.keys(data).length > 0) {
-                        setStore(data);
+                loadFromCloud(savedPIN, function (err, cloudData) {
+                    var localTs = (getStore()._ts) || 0;
+                    var cloudTs = (cloudData && cloudData._ts) || 0;
+                    if (!err && cloudData && cloudTs > localTs) {
+                        /* Cloud is newer — apply and reload to re-render DOM */
+                        setStore(cloudData);
                         setSyncStatus("ok", savedPIN);
                         location.reload();
-                    } else if (err) {
-                        setSyncStatus("error", savedPIN);
                     } else {
-                        setSyncStatus("ok", savedPIN);
-                        scheduleSync(); /* push local state up */
+                        /* Local is same or newer — push local to cloud */
+                        setSyncStatus(err ? "error" : "ok", savedPIN);
+                        scheduleSync();
                     }
                 });
             }
-            hidePinModal();
         } else {
             /* No PIN yet — show modal */
             setSyncStatus("none");
