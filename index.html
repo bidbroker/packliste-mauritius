@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packliste Mauritius – Abhaken</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: linear-gradient(160deg, #0f4c81 0%, #2989d8 45%, #92dce9 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+        }
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.25);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #0056b3, #00a8cc);
+            color: #fff;
+            padding: 24px 28px;
+        }
+        header h1 { margin: 0 0 4px; font-size: 1.6rem; }
+        header p  { margin: 0; opacity: .9; font-size: .9rem; }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e6eef5;
+            flex-wrap: wrap;
+        }
+        .toolbar .progress-label { font-size: .85rem; color: #35566b; margin-right: auto; }
+        .toolbar button {
+            border: 1px solid #b9d4e6;
+            background: #f2f9fd;
+            color: #0056b3;
+            border-radius: 8px;
+            padding: 7px 13px;
+            font-size: .8rem;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .toolbar button:hover { background: #e0f0fa; }
+
+        .sync-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 20px;
+            background: #f7fbff;
+            border-bottom: 1px solid #e6eef5;
+            flex-wrap: wrap;
+        }
+        .sync-status {
+            font-size: .8rem;
+            font-weight: 600;
+            color: #35566b;
+            margin-right: auto;
+        }
+        .sync-status.ok     { color: #157a3d; }
+        .sync-status.saving { color: #c07800; }
+        .sync-status.error  { color: #c0392b; }
+
+        .btn-code {
+            background: #eaf6ff;
+            border: 1px solid #7cc5e8;
+            color: #0056b3;
+            border-radius: 8px;
+            padding: 7px 13px;
+            font-size: .8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-code:hover { background: #d5eefa; }
+
+        .progress-bar { height: 6px; background: #e6eef5; }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00a8cc, #42e87c);
+            transition: width .3s ease;
+        }
+
+        main { padding: 12px 20px 24px; }
+
+        details.category {
+            border: 1px solid #dcebf4;
+            border-radius: 12px;
+            margin: 10px 0;
+            background: #fbfdff;
+        }
+        details.category summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 14px 18px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #0b3a5e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+        details.category summary::-webkit-details-marker { display: none; }
+        details.category summary::before { content: "▸"; transition: transform .2s; color: #00a8cc; }
+        details.category[open] summary::before { transform: rotate(90deg); }
+        summary .cat-count {
+            margin-left: auto;
+            font-size: .75rem;
+            font-weight: 500;
+            background: #e6f2f9;
+            padding: 3px 10px;
+            border-radius: 999px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        details.category summary .cat-count.done { background: #d9f7e5; }
+        .cat-count .b-done { color: #157a3d; background: #c3f0d5; border-radius: 999px; padding: 1px 7px; }
+        .cat-count .b-open { color: #35566b; background: #d4e9f5; border-radius: 999px; padding: 1px 7px; }
+
+        .items { padding: 4px 18px 8px; }
+        .item-row { display: flex; align-items: center; gap: 4px; margin: 2px 0; }
+        label.item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 9px 10px; border-radius: 8px; cursor: pointer;
+            font-size: .95rem; color: #22384a; flex: 1; min-width: 0;
+        }
+        label.item:hover { background: #eef7fc; }
+        label.item input[type="checkbox"] {
+            width: 18px; height: 18px; accent-color: #00a8cc;
+            cursor: pointer; flex-shrink: 0;
+        }
+        label.item input:checked + span { text-decoration: line-through; color: #93a8b5; }
+
+        .edit-btn {
+            flex-shrink: 0; background: none; border: 1px solid transparent;
+            color: #93a8b5; cursor: pointer; font-size: .9rem;
+            padding: 5px 7px; border-radius: 6px; opacity: 0;
+            transition: opacity .15s, background .15s; line-height: 1;
+        }
+        .item-row:hover .edit-btn { opacity: 1; }
+        .edit-btn:hover { background: #e0f0fa; border-color: #b9d4e6; color: #0056b3; }
+
+        .delete-btn {
+            flex-shrink: 0; background: none; border: 1px solid transparent;
+            color: #c0a8b5; cursor: pointer; font-size: .8rem;
+            padding: 5px 7px; border-radius: 6px; opacity: 0;
+            transition: opacity .15s, background .15s; line-height: 1;
+        }
+        .item-row:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { background: #fde8e8; border-color: #f5b9b9; color: #c0392b; }
+
+        .edit-input {
+            flex: 1; font-size: .95rem; font-family: inherit; color: #22384a;
+            padding: 8px 10px; border: 1.5px solid #00a8cc;
+            border-radius: 8px; outline: none; background: #f7fcff; min-width: 0;
+        }
+
+        .add-row { margin-top: 6px; padding: 0 10px 8px; }
+        .add-item-btn {
+            background: none; border: 1.5px dashed #b9d4e6; color: #0056b3;
+            cursor: pointer; font-size: .85rem; padding: 7px 14px;
+            border-radius: 8px; width: 100%; text-align: left;
+            transition: background .15s, border-color .15s;
+        }
+        .add-item-btn:hover { background: #eef7fc; border-color: #00a8cc; }
+
+        .new-item-row { display: flex; align-items: center; gap: 6px; padding: 4px 10px 8px; }
+        .new-item-input {
+            flex: 1; font-size: .9rem; font-family: inherit; padding: 8px 10px;
+            border: 1.5px solid #00a8cc; border-radius: 8px; outline: none;
+            background: #f7fcff; color: #22384a; min-width: 0;
+        }
+        .new-item-confirm {
+            background: #00a8cc; color: #fff; border: none;
+            border-radius: 8px; padding: 8px 12px; cursor: pointer;
+            font-size: .9rem; flex-shrink: 0;
+        }
+        .new-item-confirm:hover { background: #0090b0; }
+        .new-item-cancel {
+            background: none; color: #93a8b5; border: 1px solid #dcebf4;
+            border-radius: 8px; padding: 8px 10px; cursor: pointer;
+            font-size: .9rem; flex-shrink: 0;
+        }
+        .new-item-cancel:hover { background: #f5f5f5; }
+
+        /* PIN-Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 16px 48px rgba(0,0,0,.35);
+        }
+        .modal h3 { margin: 0 0 10px; font-size: 1.15rem; color: #0b3a5e; }
+        .modal p  { margin: 0 0 18px; font-size: .88rem; color: #35566b; line-height: 1.55; }
+        .pin-input {
+            display: block;
+            width: 100%;
+            text-align: center;
+            font-size: 2.4rem;
+            letter-spacing: .45em;
+            padding: 14px 10px;
+            border: 2px solid #b9d4e6;
+            border-radius: 10px;
+            outline: none;
+            color: #0b3a5e;
+            font-weight: 700;
+            font-family: monospace;
+            background: #f7fcff;
+            transition: border-color .15s;
+        }
+        .pin-input:focus { border-color: #00a8cc; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
+        .modal-btns button {
+            padding: 10px 20px; border-radius: 8px;
+            font-size: .9rem; cursor: pointer; border: none;
+        }
+        .btn-primary { background: #00a8cc; color: #fff; font-weight: 600; }
+        .btn-primary:hover { background: #0090b0; }
+        .btn-secondary { background: #f0f4f8; color: #35566b; }
+        .btn-secondary:hover { background: #e0eaf2; }
+
+        footer { padding: 0 28px 24px; color: #7a93a5; font-size: .78rem; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏝️ Packliste – Mauritius</h1>
+            <p>Durch Anhaken an der Checkbox wird der Punkt als gepackt markiert. Fortschritt wird automatisch gespeichert.</p>
+        </header>
+
+        <div class="toolbar">
+            <span class="progress-label" id="progressLabel">0 von 0 gepackt</span>
+            <button type="button" id="expandAll">Alle ausklappen</button>
+            <button type="button" id="collapseAll">Alle zuklappen</button>
+            <button type="button" id="resetAll">Zurücksetzen</button>
+        </div>
+
+        <div class="sync-bar">
+            <span class="sync-status" id="syncStatus">Kein Sync-Code</span>
+            <button type="button" class="btn-code" id="btnChangeCode">🔑 Code ändern</button>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <main id="main">
+            <details class="category">
+                <summary>🏠 Vor dem Urlaub <span class="cat-count"></span></summary>
+                <div class="items">
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="v1"><span>Mistkübel ausleeren</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="v2"><span>Wasser abstellen</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                </div>
+            </details>
+
+            <details class="category">
+                <summary>👕 Kleidung <span class="cat-count"></span></summary>
+                <div class="items">
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k1"><span>5 Unterhosen / 3 Sport-Unterhosen</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k2"><span>2 Socken / 3 Sportsocken</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k3"><span>3 Badehosen / 1 Badetasche / 0 Badetuch</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k4"><span>4 Poloshirts</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k5"><span>5 T-Shirts</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k6"><span>4 Sportshirts</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k7"><span>Radhose / kurze Sporthose</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k8"><span>4 Hemd Kurzarm / 0 Langarm</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k9"><span>2 Jean</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k10"><span>3 Kurze Hose</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="k11"><span>1 Sweatshirt / Hoodie / Reise</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                </div>
+            </details>
+
+            <details class="category">
+                <summary>👟 Schuhe <span class="cat-count"></span></summary>
+                <div class="items">
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="s1"><span>1 Gürtel</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="s2"><span>1 Sportschuhe</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="s3"><span>0 Wanderschuhe</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="s4"><span>1 Flip Flop / 0 Sandalen?</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="s5"><span>1 Badeschlapfen</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                </div>
+            </details>
+
+            <details class="category">
+                <summary>🧢 Zubehör <span class="cat-count"></span></summary>
+                <div class="items">
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="z1"><span>2 Sonnenbrille</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="z2"><span>1 Kappel</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="z3"><span>1 Regenschutz</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="z4"><span>1 Kleiner Rucksack</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                </div>
+            </details>
+
+            <details class="category">
+                <summary>🧴 Pflege & Gesundheit <span class="cat-count"></span></summary>
+                <div class="items">
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p1"><span>Zahnbürste / Zahnseide / Zahnpaste / Ladegerät</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p2"><span>Rasierer / Ladegerät</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p3"><span>Haargel</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p4"><span>Deo / Labello</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p5"><span>Feucht- / Taschentücher</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p6"><span>Kopf- und Schmerzmittel</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p7"><span>Sonnenschutz</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p8"><span>Erste Hilfe</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p9"><span>Mückenschutz</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p10"><span>Traumel</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p11"><span>Durchfall</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="p12"><span>Hals / Schlauch</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                </div>
+            </details>
+
+            <details class="category">
+                <summary>📄 Dokumente & Technik <span class="cat-count"></span></summary>
+                <div class="items">
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="d1"><span>Kreditkarten Deckung Check</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="d2"><span>Hörnchen / Augenbinde / Ohrstöpsel</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                    <div class="item-row"><label class="item"><input type="checkbox" data-key="d3"><span>Akkupack / UK Zwischenstecker / Ladegeräte / Kopfhörer</span></label><button class="edit-btn" title="Bearbeiten">✎</button><button class="delete-btn" title="Löschen">✕</button></div>
+                </div>
+            </details>
+        </main>
+
+        <footer>Alle Änderungen werden lokal gespeichert. Mit einem 4-stelligen Code kannst du deinen Stand auf jedem Gerät abrufen.</footer>
+    </div>
+
+    <!-- PIN-Modal -->
+    <div class="modal-overlay open" id="modalPin">
+        <div class="modal">
+            <h3>🔑 Sync-Code eingeben</h3>
+            <p>Gib einen 4-stelligen Code ein (z.&nbsp;B. <strong>1234</strong>). Derselbe Code auf einem anderen Gerät lädt automatisch deinen letzten Stand.</p>
+            <input type="tel" id="pinInput" class="pin-input" placeholder="0000" maxlength="4" pattern="[0-9]{4}" inputmode="numeric">
+            <div class="modal-btns">
+                <button type="button" class="btn-secondary" id="btnPinSkip">Überspringen</button>
+                <button type="button" class="btn-primary" id="btnPinApply">✓ Verbinden</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var STORAGE_KEY  = "packliste-mauritius";
+        var SYNC_KEY     = "packliste-pin";
+        var SESSION_KEY  = "packliste-synced";
+        /* Unique token for this list instance — identifies this user's data namespace on jsonstore.io */
+        var UNIQUE_TOKEN = "b47a3c9d-52e1-4f8a-a9d2-1c6e0f7b8e45";
+        var STORE_BASE   = "https://jsonstore.io/" + UNIQUE_TOKEN + "/";
+
+        var currentPIN  = null;
+        var syncTimer   = null;
+        var progressFill  = document.getElementById("progressFill");
+        var progressLabel = document.getElementById("progressLabel");
+        var syncStatusEl  = document.getElementById("syncStatus");
+
+        // --- Local store ---
+        function getStore() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+        }
+        function setStore(data) {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+        }
+
+        function allBoxes()      { return Array.prototype.slice.call(document.querySelectorAll('input[type="checkbox"][data-key]')); }
+        function allCategories() { return Array.prototype.slice.call(document.querySelectorAll("details.category")); }
+
+        // --- Sync status display ---
+        function setSyncStatus(status, pin) {
+            if (!syncStatusEl) return;
+            var p = pin || currentPIN || "";
+            if (status === "ok")      { syncStatusEl.textContent = "✓ Synchronisiert" + (p ? " (Code: " + p + ")" : ""); syncStatusEl.className = "sync-status ok"; }
+            else if (status === "saving")  { syncStatusEl.textContent = "🔄 Speichert…"; syncStatusEl.className = "sync-status saving"; }
+            else if (status === "loading") { syncStatusEl.textContent = "🔄 Lade…"; syncStatusEl.className = "sync-status saving"; }
+            else if (status === "error")   { syncStatusEl.textContent = "⚠ Offline – lokal gespeichert" + (p ? " (Code: " + p + ")" : ""); syncStatusEl.className = "sync-status error"; }
+            else                           { syncStatusEl.textContent = "Kein Sync-Code"; syncStatusEl.className = "sync-status"; }
+        }
+
+        // --- Online sync ---
+        function loadFromCloud(pin, callback) {
+            fetch(STORE_BASE + pin, { cache: "no-store" })
+                .then(function (r) { return r.ok ? r.json() : Promise.reject("http-" + r.status); })
+                .then(function (resp) {
+                    /* jsonstore.io wraps: { "result": <value> } */
+                    var data = (resp && resp.result !== undefined) ? resp.result : resp;
+                    callback(null, data);
+                })
+                .catch(function (e) { callback(e, null); });
+        }
+
+        function saveToCloud() {
+            if (!currentPIN) return;
+            fetch(STORE_BASE + currentPIN, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(getStore())
+            })
+            .then(function () { setSyncStatus("ok"); })
+            .catch(function () { setSyncStatus("error"); });
+        }
+
+        function scheduleSync() {
+            if (!currentPIN) return;
+            clearTimeout(syncTimer);
+            setSyncStatus("saving");
+            syncTimer = setTimeout(saveToCloud, 900);
+        }
+
+        // --- PIN modal ---
+        function showPinModal() {
+            var modal = document.getElementById("modalPin");
+            modal.classList.add("open");
+            var inp = document.getElementById("pinInput");
+            inp.value = currentPIN || "";
+            setTimeout(function () { inp.focus(); inp.select(); }, 50);
+        }
+        function hidePinModal() {
+            document.getElementById("modalPin").classList.remove("open");
+        }
+
+        function applyPin(pin) {
+            if (!/^\d{4}$/.test(pin)) {
+                alert("Bitte genau 4 Ziffern eingeben (z. B. 1234).");
+                return;
+            }
+            currentPIN = pin;
+            localStorage.setItem(SYNC_KEY, pin);
+            hidePinModal();
+
+            /* Mark this PIN as synced this session so a reload doesn't re-trigger */
+            sessionStorage.setItem(SESSION_KEY, pin);
+
+            setSyncStatus("loading", pin);
+            loadFromCloud(pin, function (err, data) {
+                if (!err && data && typeof data === "object" && Object.keys(data).length > 0) {
+                    setStore(data);
+                    setSyncStatus("ok", pin);
+                    location.reload();
+                } else if (err) {
+                    setSyncStatus("error", pin);
+                    scheduleSync(); /* still try to push local state */
+                } else {
+                    /* No cloud data yet — upload local state */
+                    setSyncStatus("ok", pin);
+                    scheduleSync();
+                }
+            });
+        }
+
+        document.getElementById("btnPinApply").addEventListener("click", function () {
+            applyPin(document.getElementById("pinInput").value.trim());
+        });
+        document.getElementById("pinInput").addEventListener("keydown", function (e) {
+            if (e.key === "Enter") { e.preventDefault(); applyPin(this.value.trim()); }
+        });
+        document.getElementById("btnPinSkip").addEventListener("click", function () {
+            hidePinModal();
+            setSyncStatus("none");
+        });
+        document.getElementById("btnChangeCode").addEventListener("click", function () {
+            showPinModal();
+        });
+
+        // --- Progress + category badges ---
+        function update() {
+            var boxes = allBoxes();
+            var done  = boxes.filter(function (b) { return b.checked; }).length;
+            var total = boxes.length;
+            progressFill.style.width  = total ? Math.round(done / total * 100) + "%" : "0%";
+            progressLabel.textContent = done + " von " + total + " gepackt" + (done === total && total > 0 ? " 🎉" : "");
+            allCategories().forEach(function (cat) {
+                var inputs  = cat.querySelectorAll('input[type="checkbox"]');
+                var checked = cat.querySelectorAll('input[type="checkbox"]:checked').length;
+                var badge   = cat.querySelector(".cat-count");
+                if (!badge) return;
+                badge.innerHTML = '<span class="b-done">✓ ' + checked + '</span><span class="b-open">' + (inputs.length - checked) + ' offen</span>';
+                badge.classList.toggle("done", checked === inputs.length && inputs.length > 0);
+            });
+        }
+
+        function saveChecked() {
+            var stored = getStore();
+            stored.checked = {};
+            allBoxes().forEach(function (b) { stored.checked[b.dataset.key] = b.checked; });
+            setStore(stored);
+            scheduleSync();
+        }
+        function loadChecked() {
+            var checked = getStore().checked || {};
+            allBoxes().forEach(function (b) { b.checked = !!checked[b.dataset.key]; });
+        }
+        function loadEdits() {
+            var edits = getStore().edits || {};
+            allBoxes().forEach(function (b) {
+                if (edits[b.dataset.key]) {
+                    var span = b.parentElement.querySelector("span");
+                    if (span) span.textContent = edits[b.dataset.key];
+                }
+            });
+        }
+
+        // --- Inline editing ---
+        function startEdit(row, key) {
+            var lbl  = row.querySelector("label.item");
+            var span = lbl && lbl.querySelector("span");
+            if (!span) return;
+            var orig  = span.textContent;
+            var input = document.createElement("input");
+            input.type = "text"; input.className = "edit-input"; input.value = orig;
+            lbl.replaceChild(input, span);
+            input.focus(); input.select();
+            var done = false;
+            function confirm() {
+                if (done) return; done = true;
+                var t = input.value.trim() || orig;
+                var s = document.createElement("span"); s.textContent = t;
+                if (input.parentNode === lbl) lbl.replaceChild(s, input);
+                var stored = getStore();
+                if (!stored.edits) stored.edits = {};
+                stored.edits[key] = t;
+                setStore(stored);
+                scheduleSync();
+            }
+            function cancel() {
+                if (done) return; done = true;
+                var s = document.createElement("span"); s.textContent = orig;
+                if (input.parentNode === lbl) lbl.replaceChild(s, input);
+            }
+            input.addEventListener("keydown", function (e) {
+                if (e.key === "Enter")  { e.preventDefault(); confirm(); }
+                if (e.key === "Escape") { cancel(); }
+            });
+            input.addEventListener("blur", confirm);
+        }
+
+        // --- Build item row ---
+        function makeItemRow(key, text) {
+            var row = document.createElement("div"); row.className = "item-row";
+            var lbl = document.createElement("label"); lbl.className = "item";
+            var cb  = document.createElement("input"); cb.type = "checkbox"; cb.dataset.key = key;
+            cb.addEventListener("change", function () { saveChecked(); update(); });
+            var span = document.createElement("span"); span.textContent = text;
+            lbl.appendChild(cb); lbl.appendChild(span); row.appendChild(lbl);
+
+            var editBtn = document.createElement("button");
+            editBtn.className = "edit-btn"; editBtn.title = "Bearbeiten"; editBtn.textContent = "✎";
+            editBtn.addEventListener("click", function (e) { e.preventDefault(); startEdit(row, key); });
+            row.appendChild(editBtn);
+
+            var delBtn = document.createElement("button");
+            delBtn.className = "delete-btn"; delBtn.title = "Löschen"; delBtn.textContent = "✕";
+            delBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                if (window.confirm("Eintrag löschen?")) {
+                    var stored = getStore();
+                    if (!stored.deleted) stored.deleted = [];
+                    if (stored.deleted.indexOf(key) === -1) stored.deleted.push(key);
+                    stored.custom = (stored.custom || []).filter(function (c) { return c.key !== key; });
+                    if (stored.edits)   delete stored.edits[key];
+                    if (stored.checked) delete stored.checked[key];
+                    setStore(stored);
+                    scheduleSync();
+                    row.parentNode.removeChild(row);
+                    update();
+                }
+            });
+            row.appendChild(delBtn);
+            return row;
+        }
+
+        // --- Wire static rows ---
+        function initStaticEditing() {
+            document.querySelectorAll(".item-row").forEach(function (row) {
+                var cb  = row.querySelector('input[type="checkbox"]');
+                var btn = row.querySelector(".edit-btn");
+                if (cb && btn) btn.addEventListener("click", function (e) { e.preventDefault(); startEdit(row, cb.dataset.key); });
+            });
+        }
+        function initStaticDeleting() {
+            document.querySelectorAll(".item-row").forEach(function (row) {
+                var cb  = row.querySelector('input[type="checkbox"]');
+                var btn = row.querySelector(".delete-btn");
+                if (!cb || !btn) return;
+                var key = cb.dataset.key;
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    if (window.confirm("Eintrag löschen?")) {
+                        var stored = getStore();
+                        if (!stored.deleted) stored.deleted = [];
+                        if (stored.deleted.indexOf(key) === -1) stored.deleted.push(key);
+                        if (stored.edits)   delete stored.edits[key];
+                        if (stored.checked) delete stored.checked[key];
+                        setStore(stored);
+                        scheduleSync();
+                        row.parentNode.removeChild(row);
+                        update();
+                    }
+                });
+            });
+        }
+        function initStaticCheckboxes() {
+            allBoxes().forEach(function (b) {
+                b.addEventListener("change", function () { saveChecked(); update(); });
+            });
+        }
+
+        // --- Add item ---
+        function initAddButtons() {
+            allCategories().forEach(function (cat, catIdx) {
+                var itemsDiv = cat.querySelector(".items"); if (!itemsDiv) return;
+                var addRow = document.createElement("div"); addRow.className = "add-row";
+                var addBtn = document.createElement("button");
+                addBtn.type = "button"; addBtn.className = "add-item-btn"; addBtn.textContent = "＋ Eintrag hinzufügen";
+                addBtn.addEventListener("click", function () { showAddInput(itemsDiv, catIdx); });
+                addRow.appendChild(addBtn); itemsDiv.appendChild(addRow);
+            });
+        }
+        function showAddInput(itemsDiv, catIdx) {
+            if (itemsDiv.querySelector(".new-item-row")) return;
+            var addBtn = itemsDiv.querySelector(".add-item-btn");
+            if (addBtn) addBtn.style.display = "none";
+            var newRow = document.createElement("div"); newRow.className = "new-item-row";
+            var input  = document.createElement("input"); input.type = "text"; input.className = "new-item-input"; input.placeholder = "Neuer Eintrag …";
+            var ok = document.createElement("button"); ok.type = "button"; ok.className = "new-item-confirm"; ok.textContent = "✓";
+            var no = document.createElement("button"); no.type = "button"; no.className = "new-item-cancel"; no.textContent = "✕";
+            newRow.appendChild(input); newRow.appendChild(ok); newRow.appendChild(no);
+            itemsDiv.insertBefore(newRow, itemsDiv.querySelector(".add-row") || null);
+            input.focus();
+            function doAdd() {
+                var text = input.value.trim(); if (!text) { doCancel(); return; }
+                var key = "add_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+                var stored = getStore(); if (!stored.custom) stored.custom = [];
+                stored.custom.push({ catIdx: catIdx, key: key, text: text });
+                setStore(stored);
+                scheduleSync();
+                itemsDiv.insertBefore(makeItemRow(key, text), newRow);
+                doCancel(); update();
+            }
+            function doCancel() {
+                if (newRow.parentNode) newRow.parentNode.removeChild(newRow);
+                if (addBtn) addBtn.style.display = "";
+            }
+            ok.addEventListener("click", doAdd);
+            no.addEventListener("click", doCancel);
+            input.addEventListener("keydown", function (e) {
+                if (e.key === "Enter")  { e.preventDefault(); doAdd(); }
+                if (e.key === "Escape") { doCancel(); }
+            });
+        }
+
+        function loadCustomItems() {
+            var cats = allCategories();
+            (getStore().custom || []).forEach(function (c) {
+                var cat = cats[c.catIdx]; if (!cat) return;
+                var itemsDiv = cat.querySelector(".items"); if (!itemsDiv) return;
+                itemsDiv.insertBefore(makeItemRow(c.key, c.text), itemsDiv.querySelector(".add-row") || null);
+            });
+        }
+        function loadDeleted() {
+            (getStore().deleted || []).forEach(function (key) {
+                var cb = document.querySelector('input[type="checkbox"][data-key="' + key + '"]');
+                if (cb) { var row = cb.closest(".item-row"); if (row && row.parentNode) row.parentNode.removeChild(row); }
+            });
+        }
+
+        // --- Toolbar ---
+        document.getElementById("expandAll").addEventListener("click",  function () { allCategories().forEach(function (c) { c.open = true; }); });
+        document.getElementById("collapseAll").addEventListener("click", function () { allCategories().forEach(function (c) { c.open = false; }); });
+        document.getElementById("resetAll").addEventListener("click", function () {
+            if (window.confirm("Wirklich alle Häkchen zurücksetzen?")) {
+                allBoxes().forEach(function (b) { b.checked = false; });
+                saveChecked(); update();
+            }
+        });
+
+        // --- Boot ---
+        initStaticCheckboxes();
+        initStaticEditing();
+        initStaticDeleting();
+        initAddButtons();
+        loadCustomItems();
+        loadChecked();
+        loadEdits();
+        loadDeleted();
+        update();
+
+        // --- PIN init ---
+        var savedPIN    = localStorage.getItem(SYNC_KEY);
+        var sessionPIN  = sessionStorage.getItem(SESSION_KEY);
+
+        if (savedPIN && /^\d{4}$/.test(savedPIN)) {
+            currentPIN = savedPIN;
+            if (sessionPIN === savedPIN) {
+                /* Already synced this session (e.g. after reload) — just show status */
+                setSyncStatus("ok", savedPIN);
+            } else {
+                /* First load this session — pull latest from cloud */
+                sessionStorage.setItem(SESSION_KEY, savedPIN);
+                setSyncStatus("loading", savedPIN);
+                loadFromCloud(savedPIN, function (err, data) {
+                    if (!err && data && typeof data === "object" && Object.keys(data).length > 0) {
+                        setStore(data);
+                        setSyncStatus("ok", savedPIN);
+                        location.reload();
+                    } else if (err) {
+                        setSyncStatus("error", savedPIN);
+                    } else {
+                        setSyncStatus("ok", savedPIN);
+                        scheduleSync(); /* push local state up */
+                    }
+                });
+            }
+            hidePinModal();
+        } else {
+            /* No PIN yet — show modal */
+            setSyncStatus("none");
+        }
+
+    })();
+    </script>
+</body>
+</html>
